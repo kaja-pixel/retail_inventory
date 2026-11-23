@@ -60,7 +60,7 @@ jobs:
 
       - name: Install Backend Dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Run Backend Type Check & Build
         working-directory: ./backend
