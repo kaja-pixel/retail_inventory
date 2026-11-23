@@ -1,0 +1,258 @@
+{
+  "info": {
+    "_postman_id": "e430775e-5a67-4595-85ab-0f77091dd8a4",
+    "name": "SkillForge Inventory API",
+    "description": "Local API requests for the SkillForge inventory application. Set Super Admin email, password, and categoryId before running. Run in order to exercise product creation, update, stock history, and cleanup.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "email", "value": "" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" },
+    { "key": "categoryId", "value": "1" },
+    { "key": "productId", "value": "" },
+    { "key": "sku", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "API and database health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API and database are healthy', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('UP');",
+                  "  pm.expect(body.database.status).to.eql('CONNECTED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login succeeds and returns a token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.expect(body.data.token).to.be.a('string');",
+                  "  pm.collectionVariables.set('token', body.data.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Current authenticated user",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/me" }
+        },
+        {
+          "name": "Reject missing authentication",
+          "auth": { "type": "noauth" },
+          "request": { "method": "GET", "url": "{{baseUrl}}/products" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Protected endpoint rejects unauthenticated request', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/summary" } },
+        { "name": "Recent activities", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/recent-activities" } }
+      ]
+    },
+    {
+      "name": "Products and inventory (run in order)",
+      "item": [
+        { "name": "Categories", "request": { "method": "GET", "url": "{{baseUrl}}/products/categories" } },
+        { "name": "List products", "request": { "method": "GET", "url": "{{baseUrl}}/products?page=1&limit=10" } },
+        {
+          "name": "Create test product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Verification Item\",\n  \"sku\": \"{{sku}}\",\n  \"categoryId\": {{categoryId}},\n  \"description\": \"Temporary product created by the Postman collection\",\n  \"unitPrice\": 12.5,\n  \"stockQuantity\": 5,\n  \"lowStockThreshold\": 2\n}"
+            },
+            "url": "{{baseUrl}}/products"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('sku', 'PM-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Product is persisted and returned', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.eql(true);",
+                  "  pm.collectionVariables.set('productId', body.data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get created product",
+          "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}" }
+        },
+        {
+          "name": "Update product details",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated by the Postman verification collection\",\n  \"unitPrice\": 13.25\n}"
+            },
+            "url": "{{baseUrl}}/products/{{productId}}"
+          }
+        },
+        {
+          "name": "Reject stock updates through product edit",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stockQuantity\": 999\n}" },
+            "url": "{{baseUrl}}/products/{{productId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Stock cannot bypass inventory adjustments', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Adjust stock",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"transactionType\": \"RESTOCK\",\n  \"quantityChange\": 2,\n  \"reason\": \"Postman verification\"\n}"
+            },
+            "url": "{{baseUrl}}/inventory/adjustments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Stock update creates a transaction', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data.updatedStock).to.eql(7);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify inventory transaction",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/inventory/transactions?productId={{productId}}"
+          }
+        },
+        {
+          "name": "Delete test product (Super Admin)",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/products/{{productId}}" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Temporary product is removed', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.collectionVariables.unset('productId');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notifications, users, and audit",
+      "item": [
+        { "name": "Notifications", "request": { "method": "GET", "url": "{{baseUrl}}/notifications?limit=10" } },
+        { "name": "Unread notification count", "request": { "method": "GET", "url": "{{baseUrl}}/notifications/unread-count" } },
+        { "name": "Mark all notifications as read", "request": { "method": "PATCH", "url": "{{baseUrl}}/notifications/read-all" } },
+        { "name": "List users (Admin or Super Admin)", "request": { "method": "GET", "url": "{{baseUrl}}/users" } },
+        { "name": "List roles (Admin or Super Admin)", "request": { "method": "GET", "url": "{{baseUrl}}/users/roles" } },
+        { "name": "Audit logs (Admin or Super Admin)", "request": { "method": "GET", "url": "{{baseUrl}}/audit-logs?page=1&limit=10" } }
+      ]
+    }
+  ]
+}

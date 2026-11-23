@@ -1,0 +1,717 @@
+1. Business Scenario
+
+A retail shop currently manages its products, stock quantities, prices, employees, and sales-related inventory activities manually using notebooks and spreadsheets.
+
+This creates several problems:
+
+- Duplicate product records.
+- Incorrect stock quantities.
+- Difficulty tracking inventory changes.
+- Unauthorized access to sensitive information.
+- No proper employee role management.
+- Difficulty identifying low-stock products.
+- No centralized notification system.
+- No reliable record of who created, updated, or deleted products.
+- Time-consuming inventory reports.
+
+Your task is to develop a **Retail Inventory & Stock Management Web Application** that solves these problems through a secure, role-based, full-stack application.
+
+You must start the project from scratch, design the database, implement the backend API, build the frontend, integrate authentication, and test the complete application.
+
+2. Required Technologies
+ Frontend
+- React.js
+- TypeScript
+- HTML5 and CSS3
+- React Router
+- Axios or Fetch API
+
+Backend
+- Node.js
+- Express.js
+- TypeScript recommended
+- REST API architecture
+- JWT-based authentication
+
+Database
+- PostgreSQL
+- `pg` PostgreSQL client
+- SQL constraints, relationships, and indexes
+
+Authentication and Security
+- Google OAuth 2.0 for Google Sign-In
+- Password hashing using bcrypt or Argon2
+- Secure session/token handling
+- Role-Based Access Control (RBAC)
+- Environment variables for secrets
+
+Development Tools
+- Visual Studio Code
+- Git and GitHub
+- Postman
+- PostgreSQL client
+- Browser developer tools
+
+Architecture Rule
+
+React Frontend → Express REST API → PostgreSQL Database
+
+The frontend must never connect directly to PostgreSQL. Authentication, authorization, validation, business logic, and database operations must be handled securely by the backend.
+
+3. Main Objectives
+
+By completing this project, you should be able to:
+
+1. Create a full-stack application from scratch.
+2. Design a scalable project structure.
+3. Implement secure user registration and login.
+4. Integrate Google Sign-In using OAuth 2.0.
+5. Implement role-based permissions.
+6. Design relational PostgreSQL tables.
+7. Build REST API endpoints for CRUD operations.
+8. Implement product and inventory management.
+9. Develop an in-app notification system.
+10. Implement low-stock alerts.
+11. Build dashboard analytics.
+12. Maintain an audit trail of important activities.
+13. Protect API routes using authentication and authorization middleware.
+14. Test the frontend, backend, authentication, and database.
+15. Document and deploy the application.
+
+4. User Roles and Permissions
+
+The application must support the following roles.
+
+4.1 Super Admin
+
+The Super Admin has the highest level of access.
+
+Permissions:
+
+- Access the system dashboard.
+- Create, view, update, and deactivate user accounts.
+- Assign roles to users.
+- View all products and inventory records.
+- Add, edit, and delete products.
+- View all notifications.
+- Access audit logs.
+- View inventory reports.
+- Configure low-stock thresholds.
+- Review user activity.
+
+The Super Admin role must not be assignable by an ordinary user during registration.
+
+4.2 Admin / Inventory Manager
+
+Permissions:
+
+- Access the inventory dashboard.
+- Add, view, and edit products.
+- Manage stock quantities through authorized stock adjustments.
+- View low-stock alerts.
+- View product-related notifications.
+- Search and filter products.
+- View inventory reports.
+- View relevant inventory activity logs.
+
+An Admin must not be able to promote themselves to Super Admin or manage protected Super Admin privileges.
+
+4.3 Staff / Employee
+
+Permissions:
+
+- Log in to the system.
+- View products and stock quantities.
+- Search products by name or SKU.
+- View low-stock alerts relevant to their work.
+- View their own notifications.
+- Perform only the inventory operations explicitly authorized for Staff.
+
+Staff must not be able to manage user roles, access protected audit logs, or perform unauthorized product deletion.
+
+Role Enforcement Requirements
+
+- Every protected API endpoint must verify the user's identity.
+- The backend must check permissions for each protected operation.
+- Hiding buttons in React is not sufficient security.
+- Unauthorized requests must be rejected by the backend.
+- Users must not be able to change their role by editing a request.
+- A regular user must never be able to grant themselves Admin or Super Admin privileges.
+
+5. Authentication and Account Management
+
+Implement a complete authentication module.
+
+5.1 User Registration
+
+Create a registration page with:
+
+- Full Name
+- Email Address
+- Password
+- Confirm Password
+
+Requirements:
+
+- Validate all required fields.
+- Validate email format.
+- Enforce an appropriate password policy.
+- Confirm that the password and confirmation match.
+- Prevent duplicate email registrations.
+- Hash passwords before saving them.
+- Never store plaintext passwords.
+- Assign new users the default `STAFF` role.
+- Do not allow users to select their own privileged role during registration.
+- Display clear success and error messages.
+
+5.2 Email and Password Login
+
+Create a login page with:
+
+- Email Address
+- Password
+- Remember Me, if implemented securely
+- Forgot Password link
+- Sign in with Google button
+
+Requirements:
+
+- Verify credentials on the backend.
+- Reject invalid credentials without revealing whether a specific account exists.
+- Create an authenticated session or issue a secure token.
+- Redirect users according to their role and permissions.
+- Display a clear message when login fails.
+- Implement logout.
+- Invalidate the session or refresh-token mechanism appropriately on logout.
+
+5.3 Google / Gmail Authentication
+
+Integrate **Google Sign-In using Google OAuth 2.0 / OpenID Connect**.
+
+Requirements:
+
+- Display a “Continue with Google” button.
+- Allow users to authenticate using their Google account.
+- Verify the Google identity token on the backend using a trusted Google verification library.
+- Verify the token's audience and relevant claims.
+- Use the verified Google identity to identify the account.
+- Create a new account when permitted by the application's registration policy.
+- Assign new Google-authenticated users the default `STAFF` role.
+- Prevent users from obtaining elevated privileges through Google Sign-In.
+- Handle cancelled authentication and failed verification.
+- Store client IDs and secrets in environment variables.
+- Never trust a user-provided email address without verifying the Google identity.
+
+**Important:** Google Sign-In is an identity authentication feature. It does not mean the application should request unrestricted access to the user's Gmail inbox.
+
+5.4 Forgot Password and Reset Password
+
+Implement a secure password recovery workflow.
+
+Requirements:
+
+- Allow a user to request a password reset.
+- Generate a cryptographically secure, single-use, time-limited reset token.
+- Send a reset link through an email provider or an approved development email service.
+- Verify the token before allowing a password change.
+- Invalidate the token after successful use.
+- Never email the user's existing password.
+- Do not expose whether an email address is registered.
+
+If email delivery cannot be configured during development, implement the reset-token workflow safely and document the email integration limitation. Do not expose production reset tokens in API responses.
+
+5.5 User Profile
+
+Create a profile page where users can:
+
+- View their name and email.
+- View their assigned role.
+- Update permitted profile fields.
+- Change their password when using password-based authentication.
+- View their account status.
+
+Users must not be able to change their own role or verification status.
+
+6. Product and Inventory Management
+
+Create a Product Management page with the following features:
+
+- View all products.
+- Add new products.
+- View individual product details.
+- Edit product information.
+- Delete products after confirmation, where authorized.
+- Search by product name or SKU.
+- Filter by category and stock status.
+- Sort products by name, price, stock, or creation date.
+- Paginate product results.
+- Display current stock quantity.
+- Display low-stock products.
+- Show useful success and error messages.
+
+Each product must contain:
+
+- Product ID
+- Product Name
+- SKU
+- Category
+- Description
+- Unit Price
+- Stock Quantity
+- Low-Stock Threshold
+- Created Date
+- Updated Date
+- Created By
+- Updated By
+
+Inventory Business Rules
+
+- Product name is required.
+- SKU must be unique.
+- Unit price cannot be negative.
+- Stock quantity must be a non-negative integer.
+- Low-stock threshold must be a non-negative integer.
+- Product IDs must be generated automatically.
+- Database constraints must enforce critical data rules.
+- Stock adjustments must be validated on the backend.
+- Unauthorized users must not be able to modify inventory.
+- Product deletion must follow appropriate permission and data-integrity rules.
+
+For every stock adjustment, record the previous quantity, new quantity, reason, timestamp, and responsible user.
+
+7. Dashboard and Analytics
+
+Create a dashboard that displays useful inventory information.
+
+Required dashboard components:
+
+- Total number of products.
+- Total number of product categories.
+- Total units currently in stock.
+- Number of low-stock products.
+- Number of out-of-stock products.
+- Recently added products.
+- Recently updated products.
+- Recent inventory activities.
+- Notifications requiring attention.
+
+Display the information using summary cards and suitable tables or charts.
+
+Requirements:
+
+- Retrieve dashboard data from backend APIs.
+- Do not hardcode production dashboard values.
+- Display loading, empty, and error states.
+- Apply role-based restrictions to sensitive dashboard information.
+- Calculate inventory statistics consistently with database data.
+
+8. Notification System
+
+Implement an in-app notification system.
+
+#Required Notification Types
+1. Low-stock notification.
+2. Out-of-stock notification.
+3. New product created notification.
+4. Product information updated notification.
+5. Stock quantity adjusted notification.
+6. Important account or administrative notification.
+
+#Notification Features
+- Display a notification bell in the navigation bar.
+- Display the unread notification count.
+- Show the notification list.
+- Mark a notification as read.
+- Mark all notifications as read.
+- Display the notification creation time.
+- Show a suitable message when there are no notifications.
+- Allow users to access only the notifications they are authorized to see.
+
+# Low-Stock Alert Logic
+When a product's stock quantity becomes less than or equal to its configured low-stock threshold, the system must identify it as low stock.
+
+When the stock reaches zero, display it as out of stock.
+
+Avoid generating duplicate notifications for every page refresh. Design an appropriate strategy for notification creation and status tracking.
+
+# Notification Delivery
+Required:
+
+- Persistent in-app notifications stored in PostgreSQL.
+
+Advanced option:
+
+- Real-time notification updates using WebSockets or Server-Sent Events.
+- Email alerts for low-stock products or important administrative events.
+
+Real-time delivery and email notifications may be treated as advanced extensions if the core application is not yet complete.
+
+9. User Management Module
+
+Create an Admin User Management page.
+
+Features:
+
+- View registered users.
+- Search users by name or email.
+- Filter users by role and account status.
+- View user details.
+- Assign or change roles where authorized.
+- Activate or deactivate accounts.
+- View user registration dates.
+
+Security rules:
+
+- Only authorized administrators can manage users.
+- Users must not assign roles to themselves.
+- Protect the Super Admin account from unauthorized privilege changes.
+- Prevent unauthorized users from accessing account-management endpoints.
+- Record important role changes in the audit log.
+
+10. Audit Logs and Activity Tracking
+
+Implement an audit log to record important actions.
+
+Record at least:
+
+- User registration.
+- Successful login, where appropriate.
+- Product creation.
+- Product updates.
+- Product deletion.
+- Stock adjustments.
+- Role changes.
+- Account activation or deactivation.
+
+Each audit entry should contain:
+
+- Audit ID
+- Actor User ID
+- Action
+- Entity Type
+- Entity ID, when applicable
+- Timestamp
+- Relevant change summary
+
+Requirements:
+
+- Audit logs must be created on the backend.
+- Users must not be able to modify audit records through normal application APIs.
+- Only authorized roles may view audit logs.
+- Do not store passwords, authentication tokens, or unnecessary sensitive information in logs.
+
+11. Database Requirements
+
+Create a PostgreSQL database named:
+
+`skillforge_inventory_db`
+
+Design appropriate tables and relationships. The following tables are recommended:
+
+1. `users`
+2. `roles`
+3. `products`
+4. `categories`
+5. `notifications`
+6. `inventory_transactions`
+7. `audit_logs`
+8. `password_reset_tokens`, if password reset is implemented
+9. `user_sessions` or an appropriate refresh-token storage table, if required by your authentication design
+
+You may add other tables where justified.
+
+#Database Requirements
+- Use primary keys and foreign keys.
+- Add unique constraints where required.
+- Use appropriate data types.
+- Use `NOT NULL` constraints for required values.
+- Use `CHECK` constraints for prices and stock quantities.
+- Add suitable indexes for frequently searched fields.
+- Use transactions for multi-step operations where necessary.
+- Store password hashes rather than passwords.
+- Store notification ownership and read status.
+- Record stock changes in an inventory transaction table.
+- Use parameterized SQL queries.
+- Store secrets in environment variables.
+- Provide a `schema.sql` file for database setup.
+
+12. Backend REST API Requirements
+
+Organize the API into logical modules.
+
+#Authentication APIs
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/google`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
+
+#Product APIs
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/products`
+- `PUT /api/products/:id`
+- `DELETE /api/products/:id`
+
+#Dashboard APIs
+- `GET /api/dashboard/summary`
+- `GET /api/dashboard/recent-activities`
+
+#Notification APIs
+- `GET /api/notifications`
+- `GET /api/notifications/unread-count`
+- `PATCH /api/notifications/:id/read`
+- `PATCH /api/notifications/read-all`
+
+# User Management APIs
+- `GET /api/users`
+- `GET /api/users/:id`
+- `PATCH /api/users/:id/role`
+- `PATCH /api/users/:id/status`
+
+#Inventory APIs
+- `GET /api/inventory/low-stock`
+- `GET /api/inventory/transactions`
+- `POST /api/inventory/adjustments`
+
+#Audit APIs
+- `GET /api/audit-logs`
+
+# Health API
+- `GET /api/health`
+
+The listed endpoints define the intended API contract. Implement suitable request bodies, response structures, validation, and authorization rules for each endpoint.
+
+#Backend Requirements
+- Validate request data.
+- Return appropriate HTTP status codes.
+- Handle invalid IDs and missing records.
+- Handle duplicate email addresses and SKUs.
+- Use authentication middleware for protected endpoints.
+- Use role-based authorization middleware.
+- Handle database errors safely.
+- Use parameterized SQL queries.
+- Implement centralized error handling.
+- Do not expose stack traces, passwords, tokens, or database credentials.
+- Use transactions where necessary to maintain data integrity.
+
+13. Suggested Project Structure
+
+`inventory-management/`
+
+`frontend/`
+- `src/`
+- `components/`
+- `pages/`
+- `layouts/`
+- `services/`
+- `hooks/`
+- `context/`
+- `routes/`
+- `types/`
+- `utils/`
+
+`backend/`
+- `src/`
+- `config/`
+- `routes/`
+- `controllers/`
+- `services/`
+- `repositories/`
+- `middleware/`
+- `validators/`
+- `utils/`
+- `app.ts`
+- `server.ts`
+
+`database/`
+- `schema.sql`
+- `seed.sql`, if required
+
+`docs/`
+- `api-documentation.md`
+- `testing-report.md`
+
+`README.md`
+`.gitignore`
+
+You may improve this structure if you can explain your design decisions.
+
+14. Frontend UI Requirements
+
+Create a clean, professional, responsive interface.
+
+Required pages:
+
+1. Login
+2. Registration
+3. Forgot Password
+4. Reset Password
+5. Dashboard
+6. Product List
+7. Add Product
+8. Edit Product
+9. Product Details
+10. Notifications
+11. User Profile
+12. User Management
+13. Inventory Transactions
+14. Audit Logs
+
+Use a consistent navigation layout with role-appropriate menu items.
+
+The frontend must support:
+
+- Form validation.
+- Loading indicators.
+- Empty states.
+- Success and error messages.
+- Confirmation before destructive actions.
+- Search and filtering.
+- Responsive layouts.
+- Protected routes.
+- Role-aware navigation.
+
+Remember: frontend route protection improves the user experience, but the backend must independently enforce authorization.
+
+15. Security Requirements
+
+The application must follow these rules:
+
+- Never store plaintext passwords.
+- Never expose authentication secrets in frontend code.
+- Never commit `.env` files.
+- Validate and sanitize incoming data appropriately.
+- Use parameterized SQL queries.
+- Verify Google identity tokens on the backend.
+- Enforce authorization on every protected backend operation.
+- Use secure token/session handling.
+- If using cookies, configure appropriate `HttpOnly`, `Secure` in production, and `SameSite` settings.
+- Protect cookie-based state-changing requests against CSRF where applicable.
+- Configure CORS for trusted frontend origins.
+- Rate-limit sensitive endpoints such as login and password recovery.
+- Return generic authentication failure messages.
+- Avoid logging passwords, tokens, and secrets.
+- Prevent unauthorized role changes.
+- Use HTTPS in production.
+
+16. Testing Requirements
+
+Execute and document tests for the following scenarios.
+
+#Authentication
+1. A valid user can register.
+2. Duplicate email registration is rejected.
+3. Invalid email or password input is rejected.
+4. A valid user can log in.
+5. Invalid credentials are rejected.
+6. Logout invalidates the relevant session or authentication mechanism.
+7. Google Sign-In works with valid credentials.
+8. Invalid Google identity tokens are rejected.
+9. Newly registered users receive the default Staff role.
+10. Password reset tokens expire and cannot be reused, if implemented.
+
+# Authorization
+11. Unauthenticated users cannot access protected APIs.
+12. Staff cannot access Admin-only endpoints.
+13. Admin cannot grant themselves Super Admin privileges.
+14. Unauthorized role changes are rejected.
+
+# Inventory
+15. A valid product can be created.
+16. Duplicate SKUs are rejected.
+17. Negative prices are rejected.
+18. Negative stock quantities are rejected.
+19. Product details can be retrieved and updated.
+20. Invalid IDs and missing products are handled correctly.
+21. Product deletion follows the required permission rules.
+22. Inventory adjustments create transaction records.
+
+# Notifications and Dashboard
+23. Low-stock products trigger the intended notification behavior.
+24. Out-of-stock products are identified correctly.
+25. Users can mark notifications as read.
+26. Users cannot access another user's private notifications.
+27. Dashboard statistics reflect database data.
+28. Audit logs record important actions.
+
+# Application Quality
+29. Search and filtering work correctly.
+30. Frontend displays loading, success, and error states.
+31. Database errors are handled safely.
+32. Frontend CRUD operations work through the backend API.
+33. Secrets are not committed to GitHub.
+34. The README setup instructions work on a clean environment.
+
+Do not claim a test passed unless it was actually executed. Record any incomplete or failed tests honestly.
+
+17. GitHub Requirements
+
+- Create a dedicated GitHub repository.
+- Use meaningful commit messages.
+- Keep frontend, backend, database scripts, and documentation organized.
+- Include a `.gitignore`.
+- Never commit `.env` files or secrets.
+- Provide an `.env.example` containing placeholder values only.
+- Push the completed code to GitHub.
+- Include the repository URL in the final submission.
+
+Suggested commit messages:
+
+- `chore: initialize full-stack inventory project`
+- `feat: design PostgreSQL database schema`
+- `feat: implement user authentication`
+- `feat: integrate Google OAuth`
+- `feat: add role-based authorization`
+- `feat: implement product CRUD APIs`
+- `feat: add inventory notifications`
+- `feat: create dashboard analytics`
+- `test: verify authentication and inventory workflows`
+- `docs: add setup and API documentation`
+
+18. Documentation Requirements
+
+Create a `README.md` containing:
+
+- Project overview.
+- Business problem and solution.
+- Features and user roles.
+- Technologies used.
+- Project architecture.
+- Prerequisites.
+- Installation instructions.
+- Database setup instructions.
+- Environment variable configuration.
+- Backend and frontend startup commands.
+- Google OAuth setup instructions.
+- API endpoint documentation.
+- Test results.
+- Screenshots.
+- Known issues and incomplete features.
+- GitHub repository URL.
+
+Use placeholder values in all environment configuration examples.
+
+19. Final Deliverables
+
+Submit:
+
+1. Complete React + TypeScript frontend.
+2. Complete Node.js + Express backend.
+3. PostgreSQL `schema.sql`.
+4. Seed data or setup scripts, if required.
+5. Authentication and authorization implementation.
+6. Google Sign-In integration or documented configuration blockers.
+7. Product CRUD and inventory management.
+8. Notification system.
+9. Dashboard analytics.
+10. User management and role permissions.
+11. Inventory transaction and audit-log implementation.
+12. Postman collection or equivalent API test documentation.
+13. Test report containing actual results.
+14. README documentation.
+15. Screenshots of the working application.
+16. GitHub repository URL.
+17. A short report explaining completed features, challenges, solutions, and remaining work.
