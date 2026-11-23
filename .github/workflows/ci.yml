@@ -1,0 +1,94 @@
+name: Continuous Integration Pipeline
+
+on:
+  push:
+    branches: [ master, main, 'feature/**' ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  backend-test:
+    name: Backend Test Suite & Safety Validation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: testpassword123
+          POSTGRES_DB: skillforge_inventory_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      PORT: 5001
+      CLIENT_URL: http://localhost:5173
+      TEST_DATABASE_URL: postgresql://postgres:testpassword123@localhost:5432/skillforge_inventory_test_db
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: 5432
+      TEST_DB_NAME: skillforge_inventory_test_db
+      TEST_DB_USER: postgres
+      TEST_DB_PASSWORD: testpassword123
+      JWT_SECRET: super-secret-jwt-key-for-testing-purposes-only-32chars
+      GOOGLE_CLIENT_ID: mock-google-client-id-for-development.apps.googleusercontent.com
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Initialize Test Database Schema & Seed Data
+        run: |
+          PGPASSWORD=testpassword123 psql -h localhost -U postgres -d skillforge_inventory_test_db -f database/schema.sql
+          PGPASSWORD=testpassword123 psql -h localhost -U postgres -d skillforge_inventory_test_db -f database/seed.sql
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci || npm install
+
+      - name: Run Backend Type Check & Build
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Execute Automated API Tests
+        working-directory: ./backend
+        run: npm test
+
+  frontend-build:
+    name: Frontend Build & Type Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run Frontend Build
+        working-directory: ./frontend
+        run: npm run build

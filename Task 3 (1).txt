@@ -1,0 +1,394 @@
+# DAY 5 – AUTOMATED TESTING, CI PIPELINE & INCIDENT DEBUGGING
+
+## Project: Retail Inventory & Stock Management Web Application
+
+### 1. Business Scenario
+
+Your development team has been developing a Retail Inventory & Stock Management Web Application to replace the manual product, stock, and inventory management processes used by retail shops.
+
+The application includes the following features:
+
+- User registration and login.
+- Google Sign-In authentication.
+- Role-Based Access Control (Super Admin, Admin, and Staff).
+- Product management (Create, Read, Update, Delete).
+- Inventory and stock adjustments.
+- Product search, filtering, sorting, and pagination.
+- Low-stock and out-of-stock notifications.
+- Dashboard analytics.
+- User management.
+- Inventory transaction history.
+- Audit logs.
+- User profile management.
+
+During the latest development cycle, the team identified several issues:
+
+- Some API endpoints return unexpected responses when invalid data is submitted.
+- Product creation and updating may fail under certain conditions.
+- Inventory adjustments may produce incorrect stock quantities if validation is insufficient.
+- Unauthorized users may attempt to access restricted API endpoints.
+- Low-stock notifications may be generated repeatedly for the same product.
+- There is no proper automated testing process to verify existing features after code changes.
+- Developers sometimes run tests using the development database, which may accidentally affect existing records.
+- When a developer pushes code to GitHub, there is no automated process to verify whether the application is still working correctly.
+- When an API request fails, identifying the exact request and tracing the error takes additional time.
+- A previously fixed issue may occur again when new changes are introduced.
+
+Your team has decided to improve the application's reliability by implementing automated testing, a separate testing database, a Continuous Integration (CI) pipeline, and structured request logging.
+
+You are assigned to complete these improvements without breaking the existing Retail Inventory & Stock Management application.
+
+---
+
+## TASK 01 – Review Existing Implementation
+
+Before starting new development:
+
+1. Review the existing Retail Inventory & Stock Management application.
+2. Check the authentication and authorization APIs.
+3. Review Product CRUD operations.
+4. Check inventory adjustment functionality.
+5. Review product search, filtering, sorting, and pagination.
+6. Check low-stock and out-of-stock notification functionality.
+7. Review dashboard statistics and analytics.
+8. Check user management and role permissions.
+9. Review inventory transactions and audit logs.
+10. Check the existing PostgreSQL database configuration.
+11. Review the previous GitHub branch and Pull Request.
+12. Identify existing issues that should be resolved before testing.
+
+Do not unnecessarily rewrite or remove existing functionality.
+
+## TASK 02 – Prepare an Automated Test Plan
+
+Prepare a test plan for the existing Retail Inventory & Stock Management application.
+
+Your test plan must cover the following areas:
+
+### Authentication Testing
+1. Successful user registration.
+2. Duplicate email registration.
+3. Invalid email and password validation.
+4. Successful login.
+5. Invalid login credentials.
+6. Logout functionality.
+7. Default STAFF role assignment.
+8. Invalid Google authentication token.
+
+### Authorization Testing
+9. Unauthenticated access to protected APIs.
+10. Staff attempting to access Admin-only endpoints.
+11. Admin attempting to assign themselves Super Admin privileges.
+
+### Product Management Testing
+12. Successful product creation.
+13. Duplicate SKU validation.
+14. Negative product price validation.
+15. Negative stock quantity validation.
+16. Retrieve existing product details.
+17. Update product information.
+18. Delete product with appropriate permissions.
+19. Retrieve a non-existing product.
+
+### Inventory Testing
+20. Successful stock adjustment.
+21. Invalid stock adjustment.
+22. Inventory transaction record creation.
+23. Low-stock identification.
+24. Out-of-stock identification.
+
+### Additional Testing
+25. Product pagination.
+26. Product search and filtering.
+27. Product sorting.
+28. Notification read functionality.
+29. Dashboard statistics.
+30. Audit log creation.
+31. Database-related error handling.
+
+Document the test cases with:
+
+- Test Case ID
+- Test Scenario
+- Request Method
+- Endpoint
+- Test Input
+- Expected Result
+- Actual Result
+- Status (PASS / FAIL)
+
+Minimum requirement: Prepare at least 20 test cases.
+
+## TASK 03 – Implement Automated API Testing
+
+Implement automated tests for the existing backend API endpoints.
+
+Your implementation must verify:
+
+### Authentication
+1. Valid users can register successfully.
+2. Duplicate email registration is rejected.
+3. Valid users can log in.
+4. Invalid credentials are rejected.
+5. Newly registered users receive the default STAFF role.
+6. Unauthorized users cannot access protected APIs.
+7. Invalid Google identity tokens are rejected.
+
+### Product Management
+8. Valid products can be created.
+9. Existing product details can be retrieved.
+10. Product information can be updated.
+11. Product deletion follows the required permission rules.
+12. Duplicate SKUs are rejected.
+13. Negative prices and stock quantities are rejected.
+14. Non-existing product IDs return appropriate error responses.
+
+### Inventory Management
+15. Valid stock adjustments update inventory correctly.
+16. Invalid stock adjustments are rejected.
+17. Inventory transaction records are created correctly.
+18. Low-stock products are identified correctly.
+19. Out-of-stock products are identified correctly.
+
+### Other Features
+20. Product pagination returns the correct results.
+21. Product filtering works correctly.
+22. Product sorting works correctly.
+23. Notifications can be marked as read.
+24. Dashboard statistics return the expected response structure.
+25. Audit logs record important activities.
+
+Additional requirements:
+
+- Organize test cases properly.
+- Avoid unnecessary code duplication.
+- Use meaningful test descriptions.
+- Ensure tests can be executed using a single command.
+- Verify correct HTTP status codes.
+- Verify expected API response structures.
+- Ensure failed test cases clearly identify the problem.
+- Use the existing backend architecture without unnecessarily changing business logic.
+
+Recommended tools:
+- Jest or Vitest.
+- Supertest.
+- Appropriate database testing utilities.
+
+## TASK 04 – Configure a Separate Testing Database
+
+Your application must use a separate PostgreSQL database for automated testing.
+
+Implement the following:
+
+1. Create a dedicated testing database.
+2. Configure environment variables for the testing database.
+3. Ensure automated tests connect to the testing database.
+4. Keep development and testing database configurations separate.
+5. Prepare the testing database before running tests.
+6. Clean up test data where necessary.
+7. Ensure tests can run repeatedly without depending on previous test data.
+8. Use database transactions or appropriate cleanup strategies where necessary.
+
+Recommended database names:
+
+Development database:
+`skillforge_inventory_db`
+
+Testing database:
+`skillforge_inventory_test_db`
+
+Example environment configuration:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/skillforge_inventory_db
+
+TEST_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/skillforge_inventory_test_db
+```
+
+IMPORTANT:
+
+- Never run destructive test operations against the development or production database.
+- Never commit database passwords or secret keys to GitHub.
+- Use environment variables for sensitive configurations.
+- Verify which database is connected before executing destructive test operations.
+- Ensure automated testing cannot accidentally connect to the production database.
+
+## TASK 05 – Implement GitHub Actions CI Pipeline
+
+Configure GitHub Actions to automatically execute the project's checks whenever code is pushed or a Pull Request is created.
+
+The CI pipeline must:
+
+1. Check out the latest source code.
+2. Set up the required Node.js runtime environment.
+3. Install frontend and backend dependencies.
+4. Configure the testing environment.
+5. Set up PostgreSQL for testing where required.
+6. Prepare the testing database and schema.
+7. Execute backend automated tests.
+8. Execute frontend tests or build checks where available.
+9. Report whether the workflow passed or failed.
+
+Expected behaviour:
+
+- If all tests pass, the workflow should complete successfully.
+- If any test fails, the workflow should report failure.
+- A Pull Request must clearly show the CI result.
+- Developers must be able to identify which step failed.
+- CI must never use the development or production database.
+
+Create the GitHub Actions workflow file:
+
+`.github/workflows/ci.yml`
+
+Do not disable failing tests or hide errors just to make the workflow pass.
+
+## TASK 06 – Implement Request ID and Structured Logging
+
+The development team needs a better way to identify and investigate API failures.
+
+Implement request tracking and structured logging in the backend.
+
+Your implementation must:
+
+1. Generate a unique Request ID for every incoming API request.
+2. Include the Request ID in API response headers.
+3. Include the Request ID in relevant application logs.
+4. Record important request information.
+5. Record API errors with useful debugging information.
+6. Include timestamps and appropriate log levels.
+7. Record the HTTP method, endpoint, status code, and response duration where appropriate.
+8. Avoid logging passwords, authentication tokens, database credentials, or other sensitive information.
+
+Example response header:
+
+```http
+X-Request-ID: req-a8f21c9d
+```
+
+Example structured log:
+
+```json
+{
+  "timestamp": "2026-11-19T10:30:00.000Z",
+  "level": "error",
+  "requestId": "req-a8f21c9d",
+  "method": "GET",
+  "endpoint": "/api/products/999",
+  "statusCode": 404,
+  "message": "Product not found"
+}
+```
+
+Recommended logging libraries:
+
+- Winston
+- Pino
+
+You may use an appropriate logging library based on the existing backend architecture.
+
+## TASK 07 – Incident Investigation and Regression Testing
+
+Your mentor will provide an API failure scenario during the task review.
+
+The incident may involve any existing module of the Retail Inventory & Stock Management application.
+
+Possible incident examples:
+
+- Product creation fails when a duplicate SKU is submitted.
+- Inventory adjustment produces an incorrect stock quantity.
+- Staff users can access an Admin-only API.
+- Product filtering returns incorrect results.
+- Low-stock notifications are generated repeatedly.
+- Dashboard statistics do not match the actual database records.
+- Product updates return unexpected server errors.
+
+When you receive the incident:
+
+1. Reproduce the reported issue.
+2. Identify the affected API endpoint.
+3. Capture the Request ID from the API response.
+4. Use the Request ID to locate the relevant application logs.
+5. Investigate the root cause.
+6. Fix the identified issue.
+7. Write an automated regression test for the issue.
+8. Run the complete automated test suite again.
+9. Verify that previously working features are not affected.
+
+You must explain:
+
+- What caused the issue?
+- How did you identify the root cause?
+- What changes did you make?
+- How does your regression test prevent the issue from returning?
+
+Do not randomly modify code without identifying the root cause.
+
+## TASK 08 – GitHub Workflow and Final Submission
+
+Complete the work using the following Git workflow:
+
+1. Create a new feature branch from the latest development branch.
+2. Commit your changes with meaningful commit messages.
+3. Push your feature branch to GitHub.
+4. Create a Pull Request.
+5. Include a summary of implemented features.
+6. Include automated testing results.
+7. Include the CI workflow result.
+8. Document any known issues.
+9. Request a code review from your mentor.
+
+Suggested branch name:
+
+`feature/day-5-testing-ci-logging`
+
+Suggested commit messages:
+
+- `test: add authentication and authorization tests`
+- `test: implement product and inventory API tests`
+- `test: configure separate PostgreSQL test database`
+- `feat: implement request ID middleware`
+- `feat: add structured application logging`
+- `ci: configure GitHub Actions testing pipeline`
+- `test: add regression tests for identified issues`
+- `docs: update testing and CI documentation`
+
+---
+
+## REQUIRED DELIVERABLES
+
+Submit the following:
+
+1. Updated Retail Inventory & Stock Management source code.
+2. Automated API test files.
+3. Test plan containing at least 20 test cases.
+4. Separate PostgreSQL testing database configuration.
+5. GitHub Actions workflow configuration.
+6. Request ID middleware implementation.
+7. Structured logging implementation.
+8. Incident investigation summary.
+9. Regression test for the identified incident.
+10. Updated README documentation.
+11. Actual automated testing results.
+12. GitHub Pull Request link.
+
+---
+
+## EXPECTED LEARNING OUTCOMES
+
+By completing this task, you should be able to:
+
+1. Implement automated API testing for a full-stack application.
+2. Test authentication and role-based authorization.
+3. Test product and inventory management operations.
+4. Configure a separate PostgreSQL testing database.
+5. Understand and implement Continuous Integration.
+6. Configure GitHub Actions workflows.
+7. Implement Request ID tracking.
+8. Implement structured application logging.
+9. Investigate API failures using application logs.
+10. Identify root causes and fix software defects.
+11. Implement regression testing.
+12. Maintain application reliability without breaking existing functionality.
+
+**Important:** All testing must be performed against the existing Retail Inventory & Stock Management application. Do not create a separate Student Management System or replace the existing project with a different application.
